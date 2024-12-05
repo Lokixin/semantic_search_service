@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "semantic-search-service"
+version = "0.1.0"
+description = ""
+authors = ["Lokixin <dimasavilamartinez@gmail.com>"]
+packages = [{ include = "semantic_search_service", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.5"
+uvicorn = "^0.32.1"
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+pgvector = "^0.3.6"
+psycopg-pool = "^3.2.4"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
