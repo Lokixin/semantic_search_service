@@ -10,12 +10,14 @@ from psycopg_pool import AsyncConnectionPool
 from sentence_transformers import SentenceTransformer
 
 from semantic_search_service.adapters.psql_repo import PSQLRepo
-from semantic_search_service.domain.articles import ArticleWithEmbeddings, Article
+from semantic_search_service.domain.articles import ArticleWithEmbeddings, Article, ArticlePatch, \
+    ArticlePatchWithEmbeddings
 from semantic_search_service.domain.models import get_model, Model
 
 
 async def get_articles_service(article_id: int, repo: PSQLRepo) -> Article:
     return await repo.select_article_by_id(article_id)
+
 
 async def insert_new_article_service(article: Article, repo: PSQLRepo, model: Model) -> int:
     model = get_model(model)
@@ -32,6 +34,27 @@ async def insert_new_article_service(article: Article, repo: PSQLRepo, model: Mo
     )
     inserted_id = await repo.insert_new_article(article_with_embeddings)
     return inserted_id
+
+
+async def delete_article_service(article_id: int, repo: PSQLRepo) -> int | None:
+    deleted_id = await repo.delete_article_by_id(article_id)
+    return deleted_id
+
+
+async def patch_article_service(article_id: int, article: ArticlePatch, repo: PSQLRepo, model: Model) -> Article | None:
+    article_dict = article.model_dump(exclude_none=True)
+    embeddings_to_encode = [
+        _k
+        for _k, _v in article_dict.items()
+        if _k in ["title", "excerpt", "body"] and _v
+    ]
+    model = get_model(model)
+    new_embeddings = model.encode([article_dict[_field] for _field in embeddings_to_encode])
+    updated_embeddings = {f"{_field}_embedding": embedding for _field, embedding in zip(embeddings_to_encode, new_embeddings) }
+    article_dict.update(updated_embeddings)
+    updated_article = await repo.patch_article_by_id(article_id, ArticlePatchWithEmbeddings(**article_dict))
+    return updated_article
+
 
 async def populate_articles_table(
     data_reader: Callable[[str], list[dict[str, str]]], psql_repo: PSQLRepo, model: str = "mp_net"

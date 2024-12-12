@@ -8,7 +8,8 @@ from psycopg import sql
 from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 
-from src.semantic_search_service.domain.articles import ArticleWithEmbeddings, Article
+from src.semantic_search_service.domain.articles import ArticleWithEmbeddings, Article, ArticlePatch, \
+    ArticlePatchWithEmbeddings
 
 
 async def config_pool(conn) -> None:
@@ -54,6 +55,48 @@ class PSQLRepo:
                 inserted_id = await cur.fetchone()
             await conn.commit()
             return inserted_id
+
+    async def delete_article_by_id(self, article_id: int) -> int | None:
+        query: LiteralString = """
+            DELETE FROM articles WHERE id=%s RETURNING id
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (article_id,))
+                deleted_id = await cur.fetchone()
+            await conn.commit()
+            return deleted_id
+
+    async def patch_article_by_id(self, article_id: int, article: ArticlePatchWithEmbeddings) -> Article | None:
+        article_dict = article.model_dump(exclude_none=True)
+        if "updated_at" not in article_dict:
+            # THIS IS SATAN. FIX IT LATER
+            article_dict["updated_at"] = "NOW()"
+
+
+        query = sql.SQL("UPDATE articles SET {} WHERE id={} RETURNING title, excerpt, body, updated_at, created_at").format(
+            sql.SQL(", ").join(
+                sql.SQL("=").join([sql.Identifier(_key), sql.Placeholder(_key)])
+                for _key in article_dict.keys()
+            ),
+            sql.Placeholder("id")
+        )
+        article_dict["id"] = article_id
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, article_dict)
+                res = await cur.fetchone()
+            await conn.commit()
+            if not res:
+                return None
+            return Article(
+                title=res[0],
+                excerpt=res[1],
+                body=res[2],
+                updated_at=str(res[3]),
+                created_at=str(res[4]),
+            )
+
 
     async def create_articles_table(self) -> None:
         query: LiteralString = """
@@ -120,7 +163,7 @@ if __name__ == "__main__":
         await pool.open()
         repo = PSQLRepo(pool, db_name="vectordb")
         try:
-            res = await repo.select_article_by_id(11)
+            res = await repo.patch_article_by_id(article_id=11, article=ArticlePatch(title="blah", excerpt="blo"))
             print(res)
         finally:
             await pool.close()
