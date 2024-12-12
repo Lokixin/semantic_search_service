@@ -5,8 +5,9 @@ from starlette.responses import JSONResponse
 
 from semantic_search_service.adapters.psql_repo import PSQLRepo
 from semantic_search_service.domain.articles import Article
+from semantic_search_service.domain.models import Model
 from semantic_search_service.fastapi_dependencies import get_psql_repo
-from semantic_search_service.services.articles_services import get_articles_service
+from semantic_search_service.services.articles_services import get_articles_service, insert_new_article_service
 
 articles_router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -20,8 +21,9 @@ async def get_articles(articles_id: int, repo: PSQLRepo = Depends(get_psql_repo)
 
 
 @articles_router.post("/")
-async def post_article(article_body: Article) -> JSONResponse:
-    pass
+async def post_article(article_body: Article, model: Model, repo: PSQLRepo = Depends(get_psql_repo)) -> JSONResponse:
+    inserted_id = await insert_new_article_service(article_body, repo, model)
+    return JSONResponse({"msg": "Created new article", "id": inserted_id})
 
 
 @articles_router.delete("/{articles_id}")

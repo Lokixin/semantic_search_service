@@ -11,13 +11,27 @@ from sentence_transformers import SentenceTransformer
 
 from semantic_search_service.adapters.psql_repo import PSQLRepo
 from semantic_search_service.domain.articles import ArticleWithEmbeddings, Article
-from semantic_search_service.domain.models import get_model
-
+from semantic_search_service.domain.models import get_model, Model
 
 
 async def get_articles_service(article_id: int, repo: PSQLRepo) -> Article:
     return await repo.select_article_by_id(article_id)
 
+async def insert_new_article_service(article: Article, repo: PSQLRepo, model: Model) -> int:
+    model = get_model(model)
+    title_embedding, excerpt_embedding, body_embedding = model.encode([article.title, article.excerpt, article.body])
+    article_with_embeddings = ArticleWithEmbeddings(
+        title=article.title,
+        excerpt=article.excerpt,
+        body=article.body,
+        created_at=article.created_at if article.created_at else None,
+        updated_at=article.updated_at if article.updated_at else None,
+        title_embedding=title_embedding,
+        excerpt_embedding=excerpt_embedding,
+        body_embedding=body_embedding,
+    )
+    inserted_id = await repo.insert_new_article(article_with_embeddings)
+    return inserted_id
 
 async def populate_articles_table(
     data_reader: Callable[[str], list[dict[str, str]]], psql_repo: PSQLRepo, model: str = "mp_net"

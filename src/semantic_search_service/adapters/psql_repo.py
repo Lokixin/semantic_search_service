@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import psycopg
+from psycopg import sql
 from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 
@@ -38,6 +39,21 @@ class PSQLRepo:
                     updated_at=raw_article[3],
                     created_at=raw_article[4],
                 )
+
+    async def insert_new_article(self, article: ArticleWithEmbeddings) -> int:
+        article_dict = article.model_dump(exclude_none=True)
+
+        query = sql.SQL("INSERT INTO articles ({}) VALUES ({}) RETURNING id").format(
+        sql.SQL(', ').join(map(sql.Identifier, article_dict.keys())),
+            sql.SQL(', ').join(map(sql.Placeholder, article_dict.keys())),
+        )
+
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, article_dict)
+                inserted_id = await cur.fetchone()
+            await conn.commit()
+            return inserted_id
 
     async def create_articles_table(self) -> None:
         query: LiteralString = """
