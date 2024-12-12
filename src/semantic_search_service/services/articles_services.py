@@ -10,8 +10,13 @@ from psycopg_pool import AsyncConnectionPool
 from sentence_transformers import SentenceTransformer
 
 from semantic_search_service.adapters.psql_repo import PSQLRepo
-from semantic_search_service.domain.articles import ArticleWithEmbeddings
+from semantic_search_service.domain.articles import ArticleWithEmbeddings, Article
 from semantic_search_service.domain.models import get_model
+
+
+
+async def get_articles_service(article_id: int, repo: PSQLRepo) -> Article:
+    return await repo.select_article_by_id(article_id)
 
 
 async def populate_articles_table(

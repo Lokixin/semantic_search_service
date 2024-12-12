@@ -8,5 +8,6 @@ models to carry out semantic search tasks. Some fake articles are used, but this
 
 1. Setup Fastapi (Done)
 2. Add Semantic Search endpoint (Done)
-3. Add custom score function to compare embeddings from suer query to article's title, excerpt and body (Next)
+3. CRUD para artículos
+4. Add custom score function to compare embeddings from suer query to article's title, excerpt and body (Next)
 

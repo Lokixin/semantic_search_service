@@ -7,7 +7,6 @@ import psycopg
 from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 
-from semantic_search_service.domain.models import get_model
 from src.semantic_search_service.domain.articles import ArticleWithEmbeddings, Article
 
 
@@ -19,6 +18,26 @@ class PSQLRepo:
     def __init__(self, pool: AsyncConnectionPool, db_name: str) -> None:
         self.pool = pool
         self.db_name = db_name
+
+    async def select_article_by_id(self, article_id: int) -> Article | None:
+        query: LiteralString = """
+            SELECT (title, excerpt, body, updated_at, created_at) FROM articles
+            WHERE id=%s
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (article_id,))
+                raw_article = await cur.fetchone()
+                if not raw_article:
+                    return None
+                raw_article = raw_article[0]
+                return Article(
+                    title=raw_article[0],
+                    excerpt=raw_article[1],
+                    body=raw_article[2],
+                    updated_at=raw_article[3],
+                    created_at=raw_article[4],
+                )
 
     async def create_articles_table(self) -> None:
         query: LiteralString = """
@@ -84,15 +103,9 @@ if __name__ == "__main__":
         )
         await pool.open()
         repo = PSQLRepo(pool, db_name="vectordb")
-
-        user_query = "Novedades tecnológicas"
-        model = get_model("mini_lm")
-        user_query_embedding = model.encode(user_query)
         try:
-            res = await repo.semantic_search_articles(user_query_embedding)
-            res = [Article(*_res[0]) for _res in res]
-            for idx, _res in enumerate(res):
-                print(f"{idx}. {_res.title}\n")
+            res = await repo.select_article_by_id(11)
+            print(res)
         finally:
             await pool.close()
 

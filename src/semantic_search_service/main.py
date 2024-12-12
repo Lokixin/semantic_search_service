@@ -5,6 +5,7 @@ from typing import AsyncContextManager
 
 from fastapi import FastAPI
 
+from semantic_search_service.entrypoints.articles_router import articles_router
 from semantic_search_service.entrypoints.search_router import search_router
 from semantic_search_service.resources import pool
 
@@ -20,6 +21,7 @@ async def lifespan(app_instance: FastAPI) -> AsyncContextManager[None]:
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(search_router)
+app.include_router(articles_router)
 
 @app.get("/")
 def status():
