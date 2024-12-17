@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 import numpy as np
 
@@ -11,12 +11,10 @@ class ArticlePatch(BaseModel):
     created_at: str | None = None
 
 class ArticlePatchWithEmbeddings(ArticlePatch):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     title_embedding: np.ndarray[np.float32] | None = None
     excerpt_embedding: np.ndarray[np.float32] | None = None
     body_embedding: np.ndarray[np.float32] | None = None
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class Article(BaseModel):
@@ -28,9 +26,8 @@ class Article(BaseModel):
 
 
 class ArticleWithEmbeddings(Article):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     title_embedding: np.ndarray[np.float32]
     excerpt_embedding: np.ndarray[np.float32]
     body_embedding: np.ndarray[np.float32]
 
-    class Config:
-        arbitrary_types_allowed = True

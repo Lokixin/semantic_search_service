@@ -1,6 +1,8 @@
-FROM python:3.12-slim-bullseye
+FROM python:3.12-slim-bullseye as base
 
 RUN apt-get -y update; apt-get -y install curl
+
+ENV PYTHONUNBUFFERED=1
 
 ENV POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_CREATE=false \
@@ -19,6 +21,10 @@ RUN poetry install --no-root
 
 COPY . /app
 
-RUN poetry install
+FROM base as tests
+RUN poetry install --with=dev
+ENTRYPOINT ["poetry", "run", "pytest", ".", "-s"]
 
+FROM base as app
+RUN poetry install
 ENTRYPOINT ["poetry", "run", "uvicorn", "semantic_search_service.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

@@ -33,7 +33,7 @@ async def insert_new_article_service(article: Article, repo: PSQLRepo, model: Mo
         body_embedding=body_embedding,
     )
     inserted_id = await repo.insert_new_article(article_with_embeddings)
-    return inserted_id
+    return inserted_id[0]
 
 
 async def delete_article_service(article_id: int, repo: PSQLRepo) -> int | None:

@@ -13,12 +13,28 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
   app:
-    build: .
+    container_name: web_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
     ports:
       - "8000:8000"
     depends_on:
       - postgres
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - .:/app
+  integration:
+    container_name: tests
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tests
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres
 volumes:
   pgdata:

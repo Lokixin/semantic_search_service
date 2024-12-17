@@ -25,4 +25,4 @@ app.include_router(articles_router)
 
 @app.get("/")
 def status():
-    return {"status": "ok"}
+    return {"status": "Working"}

@@ -22,10 +22,7 @@ class PSQLRepo:
         self.db_name = db_name
 
     async def select_article_by_id(self, article_id: int) -> Article | None:
-        query: LiteralString = """
-            SELECT (title, excerpt, body, updated_at, created_at) FROM articles
-            WHERE id=%s
-        """
+        query: LiteralString = """SELECT (title, excerpt, body, updated_at, created_at) FROM articles WHERE id=%s"""
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, (article_id,))
@@ -48,7 +45,6 @@ class PSQLRepo:
         sql.SQL(', ').join(map(sql.Identifier, article_dict.keys())),
             sql.SQL(', ').join(map(sql.Placeholder, article_dict.keys())),
         )
-
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, article_dict)
