@@ -12,4 +12,3 @@ models to carry out semantic search tasks. Some fake articles are used, but this
 4. Docker image for python app (Next).
 5. Setup Tests with Docker Compose and TestDB (Next)
 6. Add custom score function to compare embeddings from user query to article's title, excerpt and body (Next)
-
